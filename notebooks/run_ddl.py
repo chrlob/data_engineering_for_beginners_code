@@ -13,22 +13,23 @@ logger = logging.getLogger(__name__)
 # Create Spark session
 spark = SparkSession.builder.appName("Run DDLs for TPCH data").getOrCreate()
 
+spark.sql("CREATE SCHEMA IF NOT EXISTS prod_db")
 logger.info("Dropping any existing TPCH tables")
 # Drop existing tables if they exist
-spark.sql("DROP TABLE IF EXISTS prod.db.customer")
-spark.sql("DROP TABLE IF EXISTS prod.db.lineitem")
-spark.sql("DROP TABLE IF EXISTS prod.db.nation")
-spark.sql("DROP TABLE IF EXISTS prod.db.orders")
-spark.sql("DROP TABLE IF EXISTS prod.db.part")
-spark.sql("DROP TABLE IF EXISTS prod.db.partsupp")
-spark.sql("DROP TABLE IF EXISTS prod.db.region")
-spark.sql("DROP TABLE IF EXISTS prod.db.supplier")
+spark.sql("DROP TABLE IF EXISTS prod_db.customer")
+spark.sql("DROP TABLE IF EXISTS prod_db.lineitem")
+spark.sql("DROP TABLE IF EXISTS prod_db.nation")
+spark.sql("DROP TABLE IF EXISTS prod_db.orders")
+spark.sql("DROP TABLE IF EXISTS prod_db.part")
+spark.sql("DROP TABLE IF EXISTS prod_db.partsupp")
+spark.sql("DROP TABLE IF EXISTS prod_db.region")
+spark.sql("DROP TABLE IF EXISTS prod_db.supplier")
 
 
 logger.info("Creating TPCH Iceberg tables")
 # Create tables using Iceberg format
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.customer (
+CREATE TABLE IF NOT EXISTS prod_db.customer (
   c_custkey    BIGINT,
   c_name       STRING,
   c_address    STRING,
@@ -44,7 +45,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.lineitem (
+CREATE TABLE IF NOT EXISTS prod_db.lineitem (
   l_orderkey      BIGINT,
   l_partkey       BIGINT,
   l_suppkey       BIGINT,
@@ -68,7 +69,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.nation (
+CREATE TABLE IF NOT EXISTS prod_db.nation (
   n_nationkey INT,
   n_name      STRING,
   n_regionkey INT,
@@ -80,7 +81,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.orders (
+CREATE TABLE IF NOT EXISTS prod_db.orders (
   o_orderkey      BIGINT,
   o_custkey       BIGINT,
   o_orderstatus   STRING,
@@ -97,7 +98,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.part (
+CREATE TABLE IF NOT EXISTS prod_db.part (
   p_partkey     BIGINT,
   p_name        STRING,
   p_mfgr        STRING,
@@ -114,7 +115,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.partsupp (
+CREATE TABLE IF NOT EXISTS prod_db.partsupp (
   ps_partkey    BIGINT,
   ps_suppkey    BIGINT,
   ps_availqty   INT,
@@ -127,7 +128,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.region (
+CREATE TABLE IF NOT EXISTS prod_db.region (
   r_regionkey INT,
   r_name      STRING,
   r_comment   STRING
@@ -138,7 +139,7 @@ TBLPROPERTIES (
 """)
 
 spark.sql("""
-CREATE TABLE IF NOT EXISTS prod.db.supplier (
+CREATE TABLE IF NOT EXISTS prod_db.supplier (
   s_suppkey   BIGINT,
   s_name      STRING,
   s_address   STRING,
@@ -153,7 +154,7 @@ TBLPROPERTIES (
 """)
 
 
-def upsert_data(data_name, data_path=Path("/home/iceberg/notebooks/notebooks/data")):
+def upsert_data(data_name, data_path=Path("/home/airflow/notebooks/data")):
     csv_path = data_path / f"{data_name}.csv"
     logger.info(f"Reading {data_name} data from {str(csv_path)}")
     df = (
@@ -163,7 +164,7 @@ def upsert_data(data_name, data_path=Path("/home/iceberg/notebooks/notebooks/dat
         .option("inferSchema", "true")
         .load(str(csv_path))
     )
-    df.writeTo(f"prod.db.{data_name}").overwritePartitions()
+    df.writeTo(f"prod_db.{data_name}").overwritePartitions()
 
 
 logger.info("Loading data into TPCH Iceberg tables")
